@@ -29,7 +29,7 @@ def getBalance(user):
   return balance
 
 # Get the value of a specific datastore, or return 0
-def GetAsync(user, key):
+def Get(user, key):
   value = None
   try:
     value = db[str(user) + ' - ' + str(key)]
@@ -40,17 +40,17 @@ def GetAsync(user, key):
   return value
 
 # Set a value to a specific datastore
-def SetAsync(user, key, value):
+def Set(user, key, value):
   db[str(user) + ' - ' + str(key)] = value
   return value
 
 # Add a value to a specific datastore
-def IncrementAsync(user, key, value):
-  data = GetAsync(user, key)
-  SetAsync(user, key, data + value)
+def Increment(user, key, value):
+  data = Get(user, key)
+  Set(user, key, data + value)
   return data + value
 
-def RemoveAsync(user, key):
+def Remove(user, key):
   try:
     del db[str(user) + ' - ' + str(key)]
   except:
@@ -104,7 +104,7 @@ async def on_message(message):
     if chance:
       newBalance = round(balance + bet * (percentWon), 2)
       await message.channel.send(f'You **won the game** at a **{round(percentWon * 100)}%**. Your new balance is **${newBalance}.**')
-      IncrementAsync(message.author.id, 'BetEarned', bet * (percentWon))
+      Increment(message.author.id, 'BetEarned', bet * (percentWon))
     else:
       percentWon = percentWon / 6
       newBalance = round(balance - (bet * (percentWon)), 2)
@@ -113,7 +113,7 @@ async def on_message(message):
         await message.channel.send(f'You lost the game at a **{round(percentWon * 100)}%**! Loser! You are now **broke** with **no money**. I suggest retrying your hand at life with **".del"**')
       else:
         await message.channel.send(f'You lost the game at a **{round(percentWon * 100)}%**! Loser! Your new balance is: **${newBalance}.**')
-      IncrementAsync(message.author.id, 'BetLost', (bet * (percentWon)))
+      Increment(message.author.id, 'BetLost', (bet * (percentWon)))
     
     db[str(message.author.id)] = newBalance
   
@@ -124,10 +124,10 @@ async def on_message(message):
 
     try:
       if msg.split(' ')[1] == 'all':
-        RemoveAsync(message.author.id, 'BetEarned')
-        RemoveAsync(message.author.id, 'BetLost')
-        RemoveAsync(message.author.id, 'DiceEarned')
-        RemoveAsync(message.author.id, 'DiceLost')
+        Remove(message.author.id, 'BetEarned')
+        Remove(message.author.id, 'BetLost')
+        Remove(message.author.id, 'DiceEarned')
+        Remove(message.author.id, 'DiceLost')
         await message.channel.send('Deleted ALL your DATA')
     except:
       pass
@@ -231,22 +231,22 @@ async def on_message(message):
     if chance == expected:
       newBalance = round(balance + (bet * percentWon), 2)
       await message.channel.send(f'**Wow! You won the game at a {round(percentWon * 100)}%! Your new balance is ${newBalance}.**')
-      IncrementAsync(message.author.id, 'DiceEarned', (bet * percentWon))
+      Increment(message.author.id, 'DiceEarned', (bet * percentWon))
     else:
       newBalance = round(balance - (bet * percentWon / 8), 2)
       await message.channel.send(f'You lost idiot! You lost **{round(percentWon / 8 * 100)}%** of your bet, since the dice rolled **{chance}**! Your new balance is **${newBalance}.**')
-      IncrementAsync(message.author.id, 'DiceLost', (bet * percentWon / 8))
+      Increment(message.author.id, 'DiceLost', (bet * percentWon / 8))
 
     db[str(message.author.id)] = newBalance
     
     return
   elif msg.startswith('.stat'):
     balance = getBalance(message.author.id)
-    diceEarned = GetAsync(message.author.id, 'DiceEarned')
-    diceLost = GetAsync(message.author.id, 'DiceLost')
+    diceEarned = Get(message.author.id, 'DiceEarned')
+    diceLost = Get(message.author.id, 'DiceLost')
 
-    betEarned = GetAsync(message.author.id, 'BetEarned')
-    betLost = GetAsync(message.author.id, 'BetLost')
+    betEarned = Get(message.author.id, 'BetEarned')
+    betLost = Get(message.author.id, 'BetLost')
 
     await message.channel.send(f'Your balance is **${round(balance, 2)}**.\nYou have won **${round(diceEarned, 2)}** and lost **${round(diceLost, 2)}** in dice. Net Gain: **${round(diceEarned - diceLost, 2)}**\nYou have won **${round(betEarned, 2)}** and lost **${round(betLost, 2)}** in gamble. Net Gain: **${round(betEarned - betLost, 2)}**')
 
